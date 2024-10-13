@@ -5,6 +5,7 @@ Tontine ( https://tontine.cash/ ) is a MSCHF game. On 2021-12-27, 7141 players e
 
 Up-to-date stats here: https://tontine-stats.s3.us-east-1.amazonaws.com/stats.json
 
-Messy analysis sheet here: https://docs.google.com/spreadsheets/d/1scomCAeojAeMXYI4x7dtftkxXGdvG7g8Kj7MWulscU8/edit?usp=sharing (ask for access)
+Analysis Google sheet here: https://docs.google.com/spreadsheets/d/1scomCAeojAeMXYI4x7dtftkxXGdvG7g8Kj7MWulscU8/edit?usp=sharing
+(If you are perusing my Github and want to know whether I can do data analysis at all, have a look please!)
 
 Manifold Markets: https://manifold.markets/browse?topic=tontine-prophecy
