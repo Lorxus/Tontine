@@ -16,7 +16,10 @@
 # It uses numpy for the analysis, and matplotlib for graphs.
 # Much of this analysis is duplicated from an existing google sheet you can probably find somewhere at https://github.com/Lorxus/Portfolio/.
 
+import collections as c
 import math
+import matplotlib.colors as mplcol
+import matplotlib.patches as mplpat
 import matplotlib.pyplot as mplplt
 import numpy as np
 import random as r
@@ -103,6 +106,7 @@ def chart_matrix(maxdeaths: int, maxdays: int, window: int) -> list[list[float]]
 # plots and pictures
 
 # line graph showing different runs over the days
+# histogram of ending outcomes for the runs
 def ensemble_plot(runs: int, window: int, maxday: int):  # -> Picture
     runs = run_run_markov(maxday, window, runs)
     cumruns = []
@@ -121,21 +125,113 @@ def ensemble_plot(runs: int, window: int, maxday: int):  # -> Picture
 
         mplplt.plot(x, temp_y)
     
+    outcomebars = c.Counter(ends)
+
     mplplt.xlabel('Day')
     mplplt.ylabel('Game Deaths')
     biggest = math.ceil(max(ends) * 1.25)
     mplplt.yticks(range(0, biggest, biggest//10))
+    mplplt.title('Ensemble Forecast Runs')
     mplplt.show()
     
-    mplplt.hist(ends)
+    mplplt.bar(outcomebars.keys(), outcomebars.values(), align='center')
+    mplplt.xticks(range(int(min(ends)*0.9), int(max(ends)*1.1)))
+    mplplt.title('Histogram of Ensemble Forecast Outcomes')
     mplplt.show()
     return
 
+# heatmap-style chart showing log-probabilities of maxdeaths deaths on day maxdays
+# replicates THE CHART from https://docs.google.com/spreadsheets/d/1scomCAeojAeMXYI4x7dtftkxXGdvG7g8Kj7MWulscU8, except better
 def the_chart(window: int, maxdeaths: int, maxdays: int): # -> Picture
-    # heatmap-style chart showing probabilities of maxdeaths deaths on day maxdays 
+    bits_matrix = np.log2(chart_matrix(maxdeaths, maxdays, window))
+    bits_matrix[np.isinf(bits_matrix)] = -101
+    bits_matrix = np.ceil(bits_matrix)
+
+    for i in range(maxdays):
+        for j in range(maxdeaths):
+            if (bits_matrix[i, j] < -6 and bits_matrix[i, j] != -101):
+                bits_matrix[i, j] = -9 
+                
+    # print(bits_matrix)
+
+    colordict = {0 : 'magenta',
+            -1 : 'darkred',
+            -1.5 : 'red',
+            -2 : 'coral',
+            -2.5 : 'orange',
+            -3: 'yellow',
+            -4: 'limegreen',
+            -5: 'teal',
+            -6: 'mediumblue',
+            -9: 'darkviolet',
+            -101: 'black'}
+    #labels = np.array('0.5', '0.25', '0.176', '0.125', '0.088', '0.063', '0.044', '0.031', '0.016', '0.0078', '0.0001', '0')
+    keys = list(colordict.keys())
+    colors = [colordict[key] for key in keys]
+
+    scalefactor = 0.75 * (20/max(maxdeaths, maxdays))
+    fig, ax = mplplt.subplots(figsize=(scalefactor * max(5, bits_matrix.shape[1]), scalefactor * max(5, bits_matrix.shape[0])))
+    
+    mplplt.xlabel('Day')
+    mplplt.ylabel('Game Deaths')
+    mplplt.title('THE CHART: Probability of Total Game Deaths by Specified Number of Days in the Future')
+
+    mplplt.xticks(range(0, maxdeaths, maxdeaths//10))
+    mplplt.yticks(range(0, maxdays, maxdays//10))
+
+    # Remove axis ticks for a cleaner visualization
+    # ax.set_xticks([])
+    # ax.set_yticks([])
+    
+    # Create a grid of colored squares
+    # Adding things to the axes, not the figure, is how to do it
+    # The axes define a canvas - the figure is just "all the stuff to see" 
+    for i in range(bits_matrix.shape[0]):
+        for j in range(bits_matrix.shape[1]):
+            # Get the color for the current matrix value
+            # Default to a neutral color if not found in dict
+            color = colordict.get(bits_matrix[i, j], 'gray')
+            
+            # Draw a rectangle representing the matrix entry
+            rect = mplplt.Rectangle((j, bits_matrix.shape[0] - 1 - i), 
+                                 1, 1, 
+                                 facecolor=color, 
+                                 edgecolor='white', 
+                                 linewidth=1)
+            ax.add_patch(rect)
+    
+    # Set the plot limits to match matrix dimensions
+    ax.set_xlim(0, bits_matrix.shape[1])
+    ax.set_ylim(0, bits_matrix.shape[0])
+
+    patchdict = {}
+    for key in colordict:
+        if key != -101:
+            patchdict['>' + str(np.round(2**(key-1), 4))] = colordict[key]
+        else:
+            patchdict[0] = colordict[-101]
+
+    legend_patches = [
+            mplpat.Patch(color=color, label=str(value))
+            for value, color in patchdict.items()
+        ]
+        
+        # Add the legend to the plot and place it outside the main plot area
+    mplplt.legend(handles=legend_patches, 
+                title='Matrix Values', 
+                loc='center left',  # Position relative to the plot
+                bbox_to_anchor=(1, 0.5),  # Adjust this to fine-tune legend position
+                fontsize='large',
+                title_fontsize='large')
+    
+    # Adjust layout to prevent cutting off the legend
+    mplplt.tight_layout()
+    ax.set_aspect('equal')
+    mplplt.show()
+    # image = [[keys.index(val) for val in row] for row in bits_matrix]
+
+    # mplplt.imshow(image, interpolation='nearest', cmap=colormap)
     return
-
-
 
 # quick little user interface 
 
@@ -155,19 +251,22 @@ def looping_prompt():
                      return looping_p()
                 
                 if command == 'm':
-                    print('TO DO')
-                    # return looping_m()
-                    return
-                
+                    return looping_m()
+                    
                 if command == 'i':
-                    print('TO DO')
-                    # return looping_i()
-                    return
+                    print('TO DO - you can find all the images under m or p...')
+                    return looping_prompt()
             
-            except:
+            except ValueError as v:
+                print(v)
                 return looping_prompt()
     
     return
+
+def looping_i():  # returns the specified image
+    # print('Images, all in one place.')
+    # print('Which image to show?')
+    return True
 
 def looping_m():  # returns a single MC run, an ensemble run, or the whole probability chart, depending on commands.
     while True:
@@ -185,61 +284,102 @@ def looping_m():  # returns a single MC run, an ensemble run, or the whole proba
                 window = None
                 while window is None:
                     try:
-                        print('How long should I sample back to, to estimate P? Enter an int.')
+                        print('What time window should I calculate the estimate of P for? Enter an int.')
                         window = int(input())
-                        if type(window) is not int or float:
-                            raise TypeError("C'mon, enter an int already.")
-                        elif type(window) is float:
-                            raise TypeError("No, a float's not good enough. An int. INT.")
-                        else:
-                            est_p = P_calc_recent(window)
-                            print('Estimate of P from the last', window, 'days:')
-                            print(est_p)
-                    except:
-                        return True  # TO DO
+                        est_p = P_calc_recent(window)
+                        print('Estimate of P from the last', window, 'days:')
+                        print(est_p)
+
+                    except ValueError:
+                        print("C'mon, enter an int already.")
 
                 days = None
                 while days is None:
                     try:
                         print('How many days in the future should I make predictions for? Again, enter an int.')
-                        days = input()
-                        if type(days) is not int or float:
-                            raise TypeError("C'mon, enter an int already.")
-                        elif type(days) is float:
-                            raise TypeError("No, a float's not good enough. An int. INT.")
-                        elif days < 1:
-                            raise ValueError("The present is already known.")
-                    except TypeError or ValueError:
-                        return looping_m()
+                        days = int(input())
+                        if days < 1:
+                            print("The present is already known.")
+                            return looping_m()
+                    except ValueError:
+                        print("C'mon, enter an int already.")
                 
-            if command == s:
+            if command == 's':
                 print('A single run!')
-        except TypeError or ValueError:
+                mkv = markov_run(days, window)
+                print('This run of the Markov process ended with', sum(mkv), 'deaths after', days, 'days.')
+                print(mkv)
+
+                print('Enter x to quit, p to return to the main prompt, or anything else to go back to the Markov model menu.')
+                command = input()
+                if command == 'x':
+                    print('Quitting...')
+                    return
+                elif command == 'm':
+                    return looping_m()
+                else:
+                    return looping_prompt()
+                
+            elif command == 'e':
+                print('An ensemble forecast!')
+                numruns = None
+                while numruns is None:
+                    try:
+                        print('How many runs should I forecast over? Enter an int.')
+                        numruns = int(input())
+                        if numruns < 2:
+                            print('Run number underflow! Returning to Markov model menu...')
+                            return looping_m()
+                        else:
+                            allruns = run_run_markov(days, window, numruns)
+                            outcomes = []
+                            print('Here\'s all the outcomes:')
+                            for line in allruns:
+                                print(line)
+                                outcomes.append(sum(line))
+                            ensemble_plot(numruns, window, days)
+                            mean = sum(outcomes)/numruns
+                            stddev = np.std(outcomes)
+                            print('Over the next', days, 'days, the mean number of deaths is predicted to be', np.round(mean, 2), 'and the standard deviation is', np.round(stddev, 2), 'such that the true number of deaths is ~95'+'%'+' likely to be between', mean-2*stddev, 'and', str(mean+2*stddev)+'.')
+                    except ValueError:
+                        print("C'mon, enter an int already.")
+
+            else:  # command == 'c'
+                print('Prepare for... THE CHART!')
+                maxdeaths = None
+                while maxdeaths is None:
+                    try:
+                        print('How large should the max number of player deaths to show be? Enter an int.')
+                        maxdeaths = int(input())
+                        if maxdeaths < days/10:
+                            print('Trust me, you don\'t want your max death count to be that small. Try something positive, or at least closer to the max day count.')
+                            return looping_m()
+                        the_chart(window, maxdeaths, days)
+                        return looping_prompt()
+
+                    except ValueError:
+                        print("C'mon, enter an int already.")
+                
+
+
+        except ValueError as v:
+            print(v)
             return looping_m()
-        
-    print('How many runs')
-
-
+     
 def looping_p():  # returns P eventually.
     print('What time window should I calculate the estimate of P for? Enter an int.')
     # to add: submenu for the linear-decreasing rather than flat estimate of P
     while True:
         try:
-            window = input()
-            if type(window) is not int or float:
-                raise TypeError("C'mon, enter an int already.")
-            elif type(window) is float:
-                raise TypeError("No, a float's not good enough. An int. INT.")
-            else:
-                est_p = P_calc_recent(window)
-                print('Estimate of P from the last', window, 'days:')
-                print(est_p)
-                return est_p
+            window = int(input())
+            est_p = P_calc_recent(window)
+            print('Estimate of P from the last', window, 'days:')
+            print(est_p)
+            return looping_prompt()
 
-        except TypeError:
+        except ValueError:
+            print("C'mon, enter an int already.")
             return looping_p()
-
-    return looping_prompt()
     
     
 # main
@@ -251,14 +391,13 @@ if __name__ == "__main__":
     print('https://github.com/Lorxus/Portfolio/')
     print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     
-
-
-
+    looping_prompt()
     # print(P_calc_recent(180))
     # print(markov_run(30, 180))
     # print(run_run_markov(50, 200, 8))
-    for entry in chart_matrix(10, 10, 500):
-        np.set_printoptions(precision=3, suppress=True)
-        print(entry)
+    # for entry in chart_matrix(20, 20, 100):
+    #     np.set_printoptions(precision=3, suppress=True)
+    #     print(entry)
     
-    ensemble_plot(32, 200, 50)
+    # ensemble_plot(32, 200, 50)
+    # the_chart(340, 20, 20)
