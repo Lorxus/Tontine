@@ -170,11 +170,11 @@ def the_chart(window: int, maxdeaths: int, maxdays: int): # -> Picture
     colors = [colordict[key] for key in keys]
 
     scalefactor = 0.75 * (20/max(maxdeaths, maxdays))
-    fig, ax = mplplt.subplots(figsize=(scalefactor * max(5, bits_matrix.shape[1]), scalefactor * max(5, bits_matrix.shape[0])))
+    fig, ax = mplplt.subplots(figsize=(scalefactor * 1.2 * max(5, bits_matrix.shape[1]), scalefactor * max(5, bits_matrix.shape[0])))
     
     mplplt.xlabel('Day')
     mplplt.ylabel('Game Deaths')
-    mplplt.title('THE CHART: Probability of Total Game Deaths by Specified Number of Days in the Future')
+    mplplt.title('THE CHART: log_2(p(Total Game Deaths By d Days))')
 
     mplplt.xticks(range(0, maxdeaths, maxdeaths//10))
     mplplt.yticks(range(0, maxdays, maxdays//10))
@@ -193,7 +193,7 @@ def the_chart(window: int, maxdeaths: int, maxdays: int): # -> Picture
             color = colordict.get(bits_matrix[i, j], 'gray')
             
             # Draw a rectangle representing the matrix entry
-            rect = mplplt.Rectangle((j, bits_matrix.shape[0] - 1 - i), 
+            rect = mplplt.Rectangle((j, i), 
                                  1, 1, 
                                  facecolor=color, 
                                  edgecolor='white', 
@@ -227,6 +227,8 @@ def the_chart(window: int, maxdeaths: int, maxdays: int): # -> Picture
     # Adjust layout to prevent cutting off the legend
     mplplt.tight_layout()
     ax.set_aspect('equal')
+    # ax.invert_yaxis()
+    # TO DO: figure out how to get the plot to have its origin at the top left or to flip the y-axis
     mplplt.show()
     # image = [[keys.index(val) for val in row] for row in bits_matrix]
 
@@ -391,7 +393,10 @@ if __name__ == "__main__":
     print('https://github.com/Lorxus/Portfolio/')
     print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     
-    looping_prompt()
+    # looping_prompt()
+    
+    the_chart(350, 40, 40)
+
     # print(P_calc_recent(180))
     # print(markov_run(30, 180))
     # print(run_run_markov(50, 200, 8))
