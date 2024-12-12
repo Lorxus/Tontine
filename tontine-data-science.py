@@ -392,11 +392,10 @@ if __name__ == "__main__":
     print('https://tontine.cash/')
     print('https://github.com/Lorxus/Portfolio/')
     print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    
-    # looping_prompt()
-    
-    the_chart(350, 40, 40)
 
+    the_chart(350, 40, 40)
+    looping_prompt()
+    
     # print(P_calc_recent(180))
     # print(markov_run(30, 180))
     # print(run_run_markov(50, 200, 8))
