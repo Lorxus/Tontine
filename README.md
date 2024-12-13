@@ -7,5 +7,6 @@ Up-to-date stats here: https://tontine-stats.s3.us-east-1.amazonaws.com/stats.js
 
 Analysis Google sheet here: https://docs.google.com/spreadsheets/d/1scomCAeojAeMXYI4x7dtftkxXGdvG7g8Kj7MWulscU8/edit?usp=sharing
 (If you are perusing my Github and want to know whether I can do data analysis at all, have a look please!)
+- Additionally, tontine-data-science.py is a better version of the best parts of the linked sheet; if you want to use it, make sure to also download tontinepop.txt (or compile the living player counts some other way).
 
 Manifold Markets: https://manifold.markets/browse?topic=tontine-prophecy
